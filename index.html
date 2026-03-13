@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Reward Experiment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0c0e18;
+            --surface: #161928;
+            --surface-alt: #1e2136;
+            --border: #2a2d42;
+            --text: #eae8e2;
+            --text-muted: #8a8698;
+            --accent: #818cf8;
+            --accent-hover: #6366f1;
+            --accent-dim: rgba(129, 140, 248, 0.12);
+            --gold: #fbbf24;
+            --gold-dim: rgba(251, 191, 36, 0.12);
+            --success: #34d399;
+            --success-dim: rgba(52, 211, 153, 0.12);
+            --error: #f87171;
+            --error-dim: rgba(248, 113, 113, 0.12);
+            --stroop-red: #f87171;
+            --stroop-blue: #60a5fa;
+            --stroop-green: #34d399;
+            --stroop-yellow: #fbbf24;
+            --radius: 14px;
+            --radius-sm: 10px;
+        }
+
+        html, body {
+            height: 100%;
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            background-image: radial-gradient(ellipse at 50% 0%, rgba(129, 140, 248, 0.07) 0%, transparent 55%);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            min-height: 100dvh;
+            min-height: 100vh;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+
+        /* ===== HEADER ===== */
+        #header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        #header.hidden { opacity: 0; pointer-events: none; height: 0; padding: 0 20px; border: none; overflow: hidden; }
+
+        .progress-steps { display: flex; align-items: center; gap: 6px; }
+        .step-dot {
+            width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 600;
+            background: var(--surface); border: 2px solid var(--border); color: var(--text-muted);
+            transition: all 0.3s ease;
+        }
+        .step-dot.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .step-dot.done { background: var(--success); border-color: var(--success); color: #fff; }
+        .step-line { width: 18px; height: 2px; background: var(--border); transition: background 0.3s ease; }
+        .step-line.done { background: var(--success); }
+
+        .points-badge {
+            background: var(--gold-dim); color: var(--gold);
+            padding: 6px 14px; border-radius: 20px;
+            font-weight: 600; font-size: 14px;
+            display: flex; align-items: center; gap: 4px;
+        }
+
+        /* ===== CONTENT ===== */
+        #content {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 28px 20px; text-align: center;
+            overflow-y: auto; transition: opacity 0.2s ease;
+        }
+
+        .screen-content {
+            width: 100%; max-width: 460px;
+            animation: screenIn 0.4s ease both;
+        }
+        @keyframes screenIn {
+            from { opacity: 0; transform: translateY(18px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== TYPOGRAPHY ===== */
+        h1 { font-size: clamp(30px, 7vw, 44px); font-weight: 800; line-height: 1.15; margin-bottom: 12px; letter-spacing: -0.02em; }
+        h2 { font-size: clamp(22px, 5vw, 32px); font-weight: 700; line-height: 1.25; margin-bottom: 10px; }
+        h3 { font-size: clamp(18px, 4vw, 24px); font-weight: 600; line-height: 1.3; margin-bottom: 8px; }
+        .subtitle { font-size: 16px; color: var(--text-muted); line-height: 1.65; margin-bottom: 28px; }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 15px 32px; border-radius: var(--radius); border: none;
+            font-family: inherit; font-size: 16px; font-weight: 600;
+            cursor: pointer; transition: all 0.15s ease;
+            min-height: 54px; user-select: none; -webkit-user-select: none;
+        }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:active { background: var(--accent-hover); transform: scale(0.97); }
+        .btn-gold { background: var(--gold); color: #1a1625; }
+        .btn-gold:active { transform: scale(0.97); filter: brightness(0.92); }
+        .btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text); }
+        .btn-outline:active { background: var(--surface); transform: scale(0.97); }
+        .btn-lg { width: 100%; padding: 18px; font-size: 18px; }
+
+        /* ===== INSTRUCTION BOX ===== */
+        .instruction {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 18px 20px;
+            margin-bottom: 28px; font-size: 15px; line-height: 1.65;
+            color: var(--text-muted); text-align: left;
+        }
+        .instruction strong { color: var(--text); }
+
+        /* ===== STROOP ===== */
+        .stroop-word {
+            font-size: clamp(52px, 14vw, 80px); font-weight: 800;
+            margin: 28px 0; user-select: none; -webkit-user-select: none;
+            letter-spacing: 0.02em; text-transform: uppercase;
+        }
+        .color-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+        .color-btn {
+            padding: 20px; border-radius: var(--radius); border: none;
+            font-family: inherit; font-size: 17px; font-weight: 700;
+            color: #fff; cursor: pointer; min-height: 64px;
+            user-select: none; -webkit-user-select: none;
+            transition: transform 0.12s ease, opacity 0.12s ease;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.25);
+        }
+        .color-btn:active { transform: scale(0.94); }
+        .color-btn:disabled { opacity: 0.5; pointer-events: none; }
+        .color-btn[data-color="RED"] { background: var(--stroop-red); }
+        .color-btn[data-color="BLUE"] { background: var(--stroop-blue); }
+        .color-btn[data-color="GREEN"] { background: var(--stroop-green); }
+        .color-btn[data-color="YELLOW"] { background: var(--stroop-yellow); color: #1a1625; text-shadow: none; }
+
+        .feedback-overlay {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 80px; z-index: 100; pointer-events: none;
+            animation: feedbackPop 0.55s ease forwards;
+        }
+        @keyframes feedbackPop {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+            25% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* ===== REACTION ===== */
+        .reaction-target {
+            width: clamp(180px, 48vw, 240px); height: clamp(180px, 48vw, 240px);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; flex-direction: column;
+            margin: 28px auto; cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
+            user-select: none; -webkit-user-select: none;
+        }
+        .reaction-target.waiting { background: var(--surface-alt); border: 3px solid var(--border); }
+        .reaction-target.ready { background: #7f1d1d; border: 3px solid var(--error); }
+        .reaction-target.go { background: #065f46; border: 3px solid var(--success); animation: glowGreen 0.6s ease infinite alternate; }
+        .reaction-target .target-text { font-size: 20px; font-weight: 600; }
+        .reaction-target .target-time { font-size: 14px; margin-top: 4px; opacity: 0.8; }
+        @keyframes glowGreen {
+            from { box-shadow: 0 0 20px rgba(52, 211, 153, 0.2); }
+            to { box-shadow: 0 0 40px rgba(52, 211, 153, 0.4); }
+        }
+
+        /* ===== MEMORY ===== */
+        .memory-display {
+            font-size: clamp(56px, 15vw, 84px); font-weight: 800;
+            height: 120px; display: flex; align-items: center;
+            justify-content: center; margin: 16px 0;
+            color: var(--accent);
+        }
+        .memory-input-display {
+            font-size: 30px; font-weight: 600; min-height: 44px;
+            margin-bottom: 16px; letter-spacing: 10px; color: var(--text);
+            font-variant-numeric: tabular-nums;
+        }
+        .numpad {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 8px; max-width: 280px; margin: 0 auto;
+        }
+        .num-btn {
+            padding: 14px; border-radius: var(--radius-sm);
+            border: 2px solid var(--border); background: var(--surface);
+            color: var(--text); font-family: inherit; font-size: 22px;
+            font-weight: 600; cursor: pointer; min-height: 56px;
+            user-select: none; -webkit-user-select: none;
+            transition: all 0.12s ease;
+        }
+        .num-btn:active { background: var(--accent); border-color: var(--accent); transform: scale(0.94); }
+        .num-btn.action-btn { font-size: 14px; font-weight: 700; letter-spacing: 0.04em; }
+        .num-btn.delete-btn { color: var(--error); border-color: rgba(248,113,113,0.3); background: var(--error-dim); }
+        .num-btn:disabled { opacity: 0.3; pointer-events: none; }
+
+        /* ===== REWARD CHOICE ===== */
+        .choice-cards { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
+        .choice-card {
+            display: flex; align-items: center; gap: 16px;
+            padding: 20px; border-radius: var(--radius);
+            border: 2px solid var(--border); background: var(--surface);
+            cursor: pointer; transition: all 0.15s ease;
+            text-align: left; font-family: inherit; color: var(--text);
+        }
+        .choice-card:active { transform: scale(0.98); }
+        .choice-card.take-card { border-color: rgba(251,191,36,0.4); }
+        .choice-card.take-card:active { background: var(--gold-dim); }
+        .choice-card.delay-card { border-color: rgba(129,140,248,0.4); }
+        .choice-card.delay-card:active { background: var(--accent-dim); }
+        .choice-icon { font-size: 34px; flex-shrink: 0; }
+        .choice-info { flex: 1; }
+        .choice-title { font-size: 16px; font-weight: 600; margin-bottom: 3px; }
+        .choice-desc { font-size: 13px; color: var(--text-muted); line-height: 1.4; }
+
+        /* ===== RESULT BADGES ===== */
+        .result-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 18px; border-radius: 20px;
+            font-weight: 600; font-size: 14px; margin-bottom: 16px;
+        }
+        .result-badge.pass { background: var(--success-dim); color: var(--success); }
+        .result-badge.fail { background: var(--error-dim); color: var(--error); }
+
+        .bonus-banner {
+            background: var(--gold-dim); border: 1px solid rgba(251,191,36,0.25);
+            border-radius: var(--radius); padding: 16px 20px;
+            margin-bottom: 20px; color: var(--gold);
+            font-weight: 600; font-size: 15px;
+            animation: bonusPulse 0.6s ease;
+        }
+        @keyframes bonusPulse {
+            0% { transform: scale(0.95); opacity: 0; }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ===== REVEAL ===== */
+        .reveal-section {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 24px;
+            margin: 16px 0; text-align: left;
+        }
+        .reveal-section h3 { color: var(--accent); margin-bottom: 12px; }
+        .reveal-section p { color: var(--text-muted); font-size: 15px; line-height: 1.7; margin-bottom: 10px; }
+        .reveal-section p:last-child { margin-bottom: 0; }
+        .reveal-section strong { color: var(--text); }
+
+        .choice-summary { display: flex; gap: 8px; margin: 14px 0; flex-wrap: wrap; }
+        .choice-tag {
+            padding: 7px 14px; border-radius: 20px;
+            font-size: 13px; font-weight: 600;
+        }
+        .choice-tag.took { background: var(--gold-dim); color: var(--gold); }
+        .choice-tag.delayed { background: var(--accent-dim); color: var(--accent); }
+
+        /* ===== COINS ===== */
+        .coins-area { margin: 24px 0; }
+        .coins-grid {
+            display: flex; flex-wrap: wrap; justify-content: center;
+            gap: 10px; margin-top: 16px;
+        }
+        .coin-img {
+            width: 72px; height: 72px; object-fit: contain;
+            filter: drop-shadow(0 4px 16px rgba(251, 191, 36, 0.35));
+            animation: coinAppear 0.5s ease both;
+        }
+        @keyframes coinAppear {
+            from { opacity: 0; transform: translateY(-16px) scale(0.7) rotate(-10deg); }
+            to { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+        }
+
+        /* ===== STATS ===== */
+        .stat { margin: 10px 0; }
+        .stat-value { font-size: 48px; font-weight: 800; }
+        .stat-value.gold { color: var(--gold); }
+        .stat-value.accent { color: var(--accent); }
+        .stat-label { font-size: 14px; color: var(--text-muted); font-weight: 500; }
+
+        .round-label {
+            font-size: 14px; color: var(--text-muted);
+            font-weight: 500; margin-bottom: 8px;
+        }
+
+        .divider { width: 100%; height: 1px; background: var(--border); margin: 24px 0; }
+
+        .mt-8 { margin-top: 8px; } .mt-16 { margin-top: 16px; } .mt-24 { margin-top: 24px; }
+        .mt-32 { margin-top: 32px; } .mb-8 { margin-bottom: 8px; } .mb-16 { margin-bottom: 16px; }
+
+        .stroop-example {
+            display: inline-block; font-size: 28px; font-weight: 700;
+            margin: 8px 0 4px; letter-spacing: 0.02em;
+        }
+        .example-note { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 360px) {
+            #content { padding: 20px 14px; }
+            .color-btn { padding: 16px; min-height: 56px; font-size: 15px; }
+            .reaction-target { width: 160px; height: 160px; }
+            .choice-card { padding: 16px; gap: 12px; }
+        }
+        @media (min-height: 800px) {
+            .stroop-word { margin: 40px 0; }
+        }
+    </style>
+</head>
+<body>
+    <header id="header" class="hidden">
+        <div class="progress-steps">
+            <div class="step-dot" data-step="1">1</div>
+            <div class="step-line"></div>
+            <div class="step-dot" data-step="2">2</div>
+            <div class="step-line"></div>
+            <div class="step-dot" data-step="3">3</div>
+            <div class="step-line"></div>
+            <div class="step-dot" data-step="4">4</div>
+        </div>
+        <div class="points-badge">
+            <span id="pts-display">0</span> pts
+        </div>
+    </header>
+    <main id="content"></main>
+
+<script>
+/* ===========================================
+   STATE
+   =========================================== */
+const S = {
+    step: 0,
+    totalPoints: 0,
+    pendingDelayed: 0,
+    delayChoices: [],
+
+    stroopRound: 0,
+    stroopCorrect: 0,
+    stroopAnswer: '',
+
+    reactionRound: 0,
+    reactionTimes: [],
+    reactionState: 'idle',
+    reactionTimeout: null,
+    reactionStart: 0,
+
+    memoryRound: 0,
+    memoryCorrect: 0,
+    currentSeq: [],
+    userSeq: [],
+    memoryBusy: false,
+};
+
+const STROOP_ROUNDS = 8;
+const REACTION_ROUNDS = 5;
+const MEMORY_ROUNDS = 3;
+const MEMORY_LENGTHS = [4, 5, 6];
+const REWARD_MULT = 3;
+const COLORS = [
+    { name: 'RED', hex: '#f87171' },
+    { name: 'BLUE', hex: '#60a5fa' },
+    { name: 'GREEN', hex: '#34d399' },
+    { name: 'YELLOW', hex: '#fbbf24' }
+];
+
+/* ===========================================
+   HELPERS
+   =========================================== */
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function clearTimers() {
+    if (S.reactionTimeout) { clearTimeout(S.reactionTimeout); S.reactionTimeout = null; }
+}
+
+function showFeedback(correct) {
+    const el = document.createElement('div');
+    el.className = 'feedback-overlay';
+    el.textContent = correct ? '✓' : '✗';
+    el.style.color = correct ? 'var(--success)' : 'var(--error)';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 600);
+}
+
+function updateHeader() {
+    const header = $('header');
+    header.classList.toggle('hidden', S.step === 0);
+    document.querySelectorAll('.step-dot').forEach(dot => {
+        const n = parseInt(dot.dataset.step);
+        dot.classList.toggle('active', n === S.step);
+        dot.classList.toggle('done', n < S.step);
+    });
+    document.querySelectorAll('.step-line').forEach((line, i) => {
+        line.classList.toggle('done', i + 1 < S.step);
+    });
+    $('pts-display').textContent = S.totalPoints;
+}
+
+/* ===========================================
+   NAVIGATION
+   =========================================== */
+function navigate(renderFn, setupFn) {
+    clearTimers();
+    const content = $('content');
+    content.style.opacity = '0';
+    setTimeout(() => {
+        content.innerHTML = '<div class="screen-content">' + renderFn() + '</div>';
+        content.style.opacity = '1';
+        updateHeader();
+        if (setupFn) setupFn();
+    }, 200);
+}
+
+/* ===========================================
+   SCREENS
+   =========================================== */
+
+/* ---- WELCOME ---- */
+function renderWelcome() {
+    return `
+        <h1>The Reward<br>Experiment</h1>
+        <p class="subtitle">An interactive exploration of attention, reaction, memory — and patience.<br>
+        Complete 3 short challenges, earn points, and face a choice after each one.</p>
+        <button class="btn btn-primary btn-lg" onclick="goStroopIntro()">Begin Experiment</button>
+    `;
+}
+
+/* ---- STROOP INTRO ---- */
+function goStroopIntro() {
+    S.step = 1;
+    navigate(renderStroopIntro);
+}
+function renderStroopIntro() {
+    return `
+        <h2>Test 1: Color Conflict</h2>
+        <div class="instruction">
+            You'll see a color <strong>word</strong> displayed in a different ink color.<br><br>
+            Your job: tap the button matching the <strong>INK COLOR</strong>, not the word itself.
+        </div>
+        <p class="mb-8" style="color:var(--text-muted);font-size:14px;">Example:</p>
+        <div class="stroop-example" style="color:var(--stroop-red)">BLUE</div>
+        <p class="example-note">The word says "BLUE" but the ink is <strong style="color:var(--stroop-red)">RED</strong> — tap <strong style="color:var(--stroop-red)">RED</strong>.</p>
+        <div class="mt-24">
+            <button class="btn btn-primary btn-lg" onclick="startStroop()">Start Test</button>
+        </div>
+    `;
+}
+
+/* ---- STROOP GAME ---- */
+function startStroop() {
+    S.stroopRound = 0;
+    S.stroopCorrect = 0;
+    navigate(renderStroopGame, setupStroopRound);
+}
+function renderStroopGame() {
+    return `
+        <div class="round-label" id="stroop-round-label">Round 1 / ${STROOP_ROUNDS}</div>
+        <div class="stroop-word" id="stroop-word">—</div>
+        <div class="color-grid">
+            ${COLORS.map(c => `<button class="color-btn" data-color="${c.name}" onclick="handleStroopAnswer('${c.name}')">${c.name}</button>`).join('')}
+        </div>
+    `;
+}
+function setupStroopRound() {
+    S.stroopRound++;
+    if (S.stroopRound > STROOP_ROUNDS) { showStroopResult(); return; }
+
+    const wordIdx = Math.floor(Math.random() * COLORS.length);
+    let inkIdx;
+    do { inkIdx = Math.floor(Math.random() * COLORS.length); } while (inkIdx === wordIdx);
+    S.stroopAnswer = COLORS[inkIdx].name;
+
+    const wordEl = $('stroop-word');
+    if (wordEl) {
+        wordEl.textContent = COLORS[wordIdx].name;
+        wordEl.style.color = COLORS[inkIdx].hex;
+    }
+    const label = $('stroop-round-label');
+    if (label) label.textContent = `Round ${S.stroopRound} / ${STROOP_ROUNDS}`;
+
+    document.querySelectorAll('.color-btn').forEach(b => b.disabled = false);
+}
+function handleStroopAnswer(color) {
+    document.querySelectorAll('.color-btn').forEach(b => b.disabled = true);
+    const correct = color === S.stroopAnswer;
+    if (correct) S.stroopCorrect++;
+    showFeedback(correct);
+    setTimeout(setupStroopRound, 650);
+}
+function showStroopResult() {
+    const passed = S.stroopCorrect >= Math.ceil(STROOP_ROUNDS * 0.38);
+    navigate(() => renderTestResult(1, `${S.stroopCorrect} / ${STROOP_ROUNDS} correct`, passed));
+}
+
+/* ---- REACTION INTRO ---- */
+function goReactionIntro() {
+    S.step = 2;
+    navigate(renderReactionIntro);
+}
+function renderReactionIntro() {
+    return `
+        <h2>Test 2: Quick Reflexes</h2>
+        <div class="instruction">
+            A circle will appear. When it turns <strong style="color:var(--success)">GREEN</strong>, tap it as fast as you can.<br><br>
+            <strong>Don't tap too early!</strong> If you do, the round restarts.
+        </div>
+        <div class="mt-24">
+            <button class="btn btn-primary btn-lg" onclick="startReaction()">Start Test</button>
+        </div>
+    `;
+}
+
+/* ---- REACTION GAME ---- */
+function startReaction() {
+    S.reactionRound = 0;
+    S.reactionTimes = [];
+    navigate(renderReactionGame, () => nextReactionRound());
+}
+function renderReactionGame() {
+    return `
+        <div class="round-label" id="reaction-round-label">Round 1 / ${REACTION_ROUNDS}</div>
+        <div class="reaction-target waiting" id="reaction-target">
+            <span class="target-text" id="reaction-text">Get ready...</span>
+            <span class="target-time" id="reaction-time-display"></span>
+        </div>
+        <p style="font-size:14px;color:var(--text-muted)" id="reaction-hint">Tap the circle when it turns green</p>
+    `;
+}
+function nextReactionRound() {
+    S.reactionRound++;
+    if (S.reactionRound > REACTION_ROUNDS) { showReactionResult(); return; }
+
+    const target = $('reaction-target');
+    const text = $('reaction-text');
+    const timeDisp = $('reaction-time-display');
+    const label = $('reaction-round-label');
+    const hint = $('reaction-hint');
+    if (!target) return;
+
+    target.className = 'reaction-target ready';
+    text.textContent = 'Wait...';
+    timeDisp.textContent = '';
+    if (label) label.textContent = `Round ${S.reactionRound} / ${REACTION_ROUNDS}`;
+    if (hint) hint.textContent = 'Tap the circle when it turns green';
+    S.reactionState = 'ready';
+
+    const delay = 1500 + Math.random() * 3000;
+    S.reactionTimeout = setTimeout(() => {
+        if (S.reactionState !== 'ready') return;
+        target.className = 'reaction-target go';
+        text.textContent = 'TAP!';
+        S.reactionState = 'go';
+        S.reactionStart = performance.now();
+    }, delay);
+
+    target.onpointerdown = handleReactionTap;
+}
+function handleReactionTap(e) {
+    if (e) e.preventDefault();
+    const target = $('reaction-target');
+    const text = $('reaction-text');
+    const timeDisp = $('reaction-time-display');
+    const hint = $('reaction-hint');
+
+    if (S.reactionState === 'ready') {
+        clearTimeout(S.reactionTimeout);
+        target.className = 'reaction-target waiting';
+        text.textContent = 'Too early!';
+        if (hint) hint.textContent = 'Wait for green next time';
+        S.reactionState = 'idle';
+        S.reactionRound--;
+        setTimeout(nextReactionRound, 1200);
+    } else if (S.reactionState === 'go') {
+        const ms = Math.round(performance.now() - S.reactionStart);
+        S.reactionTimes.push(ms);
+        S.reactionState = 'idle';
+        target.className = 'reaction-target waiting';
+        text.textContent = `${ms} ms`;
+        timeDisp.textContent = '';
+        setTimeout(nextReactionRound, 1000);
+    }
+}
+function showReactionResult() {
+    const avg = Math.round(S.reactionTimes.reduce((a, b) => a + b, 0) / S.reactionTimes.length);
+    const passed = avg < 900;
+    navigate(() => renderTestResult(2, `${avg} ms average`, passed));
+}
+
+/* ---- MEMORY INTRO ---- */
+function goMemoryIntro() {
+    S.step = 3;
+    navigate(renderMemoryIntro);
+}
+function renderMemoryIntro() {
+    return `
+        <h2>Test 3: Number Recall</h2>
+        <div class="instruction">
+            Watch a sequence of digits appear one at a time. Then <strong>enter them back in the same order</strong> using the keypad.<br><br>
+            The sequences get longer each round. There are <strong>${MEMORY_ROUNDS} rounds</strong>.
+        </div>
+        <div class="mt-24">
+            <button class="btn btn-primary btn-lg" onclick="startMemory()">Start Test</button>
+        </div>
+    `;
+}
+
+/* ---- MEMORY GAME ---- */
+function startMemory() {
+    S.memoryRound = 0;
+    S.memoryCorrect = 0;
+    navigate(renderMemoryGame, () => nextMemoryRound());
+}
+function renderMemoryGame() {
+    return `
+        <div class="round-label" id="memory-round-label">Round 1 / ${MEMORY_ROUNDS}</div>
+        <div class="memory-display" id="memory-display"></div>
+        <div class="memory-input-display" id="memory-input"></div>
+        <div class="numpad" id="memory-numpad">
+            ${[1,2,3,4,5,6,7,8,9].map(n => `<button class="num-btn" onclick="handleNumpad(${n})">${n}</button>`).join('')}
+            <button class="num-btn delete-btn action-btn" onclick="handleNumpad(-1)">DEL</button>
+            <button class="num-btn" onclick="handleNumpad(0)">0</button>
+            <button class="num-btn action-btn" style="color:var(--success);border-color:rgba(52,211,153,0.3);background:var(--success-dim)" onclick="handleNumpad(-2)">OK</button>
+        </div>
+    `;
+}
+async function nextMemoryRound() {
+    S.memoryRound++;
+    if (S.memoryRound > MEMORY_ROUNDS) { showMemoryResult(); return; }
+
+    const len = MEMORY_LENGTHS[S.memoryRound - 1];
+    S.currentSeq = Array.from({ length: len }, () => Math.floor(Math.random() * 10));
+    S.userSeq = [];
+    S.memoryBusy = true;
+
+    const display = $('memory-display');
+    const input = $('memory-input');
+    const numpad = $('memory-numpad');
+    const label = $('memory-round-label');
+    if (!display) return;
+
+    if (label) label.textContent = `Round ${S.memoryRound} / ${MEMORY_ROUNDS}`;
+    input.textContent = '';
+    numpad.style.visibility = 'hidden';
+    display.style.color = 'var(--accent)';
+
+    await sleep(500);
+    for (let i = 0; i < S.currentSeq.length; i++) {
+        display.textContent = S.currentSeq[i];
+        await sleep(850);
+        display.textContent = '';
+        await sleep(250);
+    }
+
+    display.textContent = '?';
+    display.style.color = 'var(--text-muted)';
+    numpad.style.visibility = 'visible';
+    updateMemoryInput();
+    S.memoryBusy = false;
+}
+function handleNumpad(val) {
+    if (S.memoryBusy) return;
+    if (val === -1) {
+        S.userSeq.pop();
+        updateMemoryInput();
+    } else if (val === -2) {
+        checkMemoryAnswer();
+    } else {
+        if (S.userSeq.length < S.currentSeq.length) {
+            S.userSeq.push(val);
+            updateMemoryInput();
+        }
+    }
+}
+function updateMemoryInput() {
+    const input = $('memory-input');
+    if (!input) return;
+    let str = '';
+    for (let i = 0; i < S.currentSeq.length; i++) {
+        str += i < S.userSeq.length ? S.userSeq[i] : '·';
+        if (i < S.currentSeq.length - 1) str += ' ';
+    }
+    input.textContent = str;
+}
+function checkMemoryAnswer() {
+    if (S.userSeq.length !== S.currentSeq.length) return;
+    S.memoryBusy = true;
+    const correct = S.userSeq.every((d, i) => d === S.currentSeq[i]);
+    if (correct) S.memoryCorrect++;
+    showFeedback(correct);
+    setTimeout(() => { S.memoryBusy = false; nextMemoryRound(); }, 800);
+}
+function showMemoryResult() {
+    const passed = S.memoryCorrect >= 1;
+    navigate(() => renderTestResult(3, `${S.memoryCorrect} / ${MEMORY_ROUNDS} sequences correct`, passed));
+}
+
+/* ---- TEST RESULT (generic) ---- */
+function renderTestResult(testNum, scoreText, passed) {
+    let html = '';
+
+    // Apply delayed rewards from previous test
+    if (S.pendingDelayed > 0) {
+        const bonus = S.pendingDelayed * REWARD_MULT;
+        S.totalPoints += bonus;
+        S.pendingDelayed = 0;
+        html += `<div class="bonus-banner">⏳ Your patience paid off! +${bonus} point${bonus > 1 ? 's' : ''} from delaying!</div>`;
+    }
+
+    const testNames = { 1: 'Color Conflict', 2: 'Quick Reflexes', 3: 'Number Recall' };
+    html += `<h2>${testNames[testNum]}</h2>`;
+    html += `<div class="stat mb-16"><div class="stat-value accent">${scoreText.split(' ')[0]}</div><div class="stat-label">${scoreText.split(' ').slice(1).join(' ')}</div></div>`;
+
+    if (passed) {
+        html += `<div class="result-badge pass">✓ Passed</div>`;
+        if (testNum < 3) {
+            html += `
+                <p class="subtitle" style="margin-bottom:12px">You earned <strong style="color:var(--gold)">1 point</strong>. What will you do?</p>
+                <div class="choice-cards">
+                    <button class="choice-card take-card" onclick="handleRewardChoice('take', ${testNum})">
+                        <div class="choice-icon">🪙</div>
+                        <div class="choice-info">
+                            <div class="choice-title">Take 1 point now</div>
+                            <div class="choice-desc">Safe and instant — it's yours</div>
+                        </div>
+                    </button>
+                    <button class="choice-card delay-card" onclick="handleRewardChoice('delay', ${testNum})">
+                        <div class="choice-icon">⏳</div>
+                        <div class="choice-info">
+                            <div class="choice-title">Wait for ${REWARD_MULT}× points</div>
+                            <div class="choice-desc">Get ${REWARD_MULT} points instead — but only after the next test</div>
+                        </div>
+                    </button>
+                </div>
+            `;
+        } else {
+            S.totalPoints += 1;
+            html += `<p class="subtitle">+1 point earned!</p>`;
+            html += `<button class="btn btn-primary btn-lg mt-16" onclick="goReveal()">See Your Results</button>`;
+        }
+    } else {
+        html += `<div class="result-badge fail">✗ Not quite</div>`;
+        html += `<p class="subtitle">No point earned this round — but keep going!</p>`;
+        if (testNum === 1) html += `<button class="btn btn-primary btn-lg" onclick="goReactionIntro()">Next Test</button>`;
+        else if (testNum === 2) html += `<button class="btn btn-primary btn-lg" onclick="goMemoryIntro()">Next Test</button>`;
+        else html += `<button class="btn btn-primary btn-lg" onclick="goReveal()">See Your Results</button>`;
+    }
+
+    return html;
+}
+
+function handleRewardChoice(choice, testNum) {
+    S.delayChoices.push({ test: testNum, choice });
+    if (choice === 'take') {
+        S.totalPoints += 1;
+    } else {
+        S.pendingDelayed += 1;
+    }
+    updateHeader();
+    if (testNum === 1) goReactionIntro();
+    else if (testNum === 2) goMemoryIntro();
+}
+
+/* ---- REVEAL ---- */
+function goReveal() {
+    // Apply any remaining delayed rewards
+    if (S.pendingDelayed > 0) {
+        S.totalPoints += S.pendingDelayed * REWARD_MULT;
+        S.pendingDelayed = 0;
+    }
+    S.step = 4;
+    navigate(renderReveal);
+}
+function renderReveal() {
+    let html = '<h2>The Real Test</h2>';
+    html += `<p class="subtitle" style="margin-bottom:20px">The cognitive challenges were just the setting.<br>The <strong style="color:var(--accent)">real experiment</strong> was the choice you made after each one.</p>`;
+
+    // Choices summary
+    html += '<div class="reveal-section">';
+    html += '<h3>Your Choices</h3>';
+    if (S.delayChoices.length === 0) {
+        html += '<p>You didn\'t face any reward choices (tests were not passed).</p>';
+    } else {
+        html += '<div class="choice-summary">';
+        S.delayChoices.forEach(c => {
+            const label = c.choice === 'take' ? `Test ${c.test}: Took it` : `Test ${c.test}: Delayed`;
+            const cls = c.choice === 'take' ? 'took' : 'delayed';
+            html += `<span class="choice-tag ${cls}">${label}</span>`;
+        });
+        html += '</div>';
+
+        const delays = S.delayChoices.filter(c => c.choice === 'delay').length;
+        const takes = S.delayChoices.filter(c => c.choice === 'take').length;
+
+        if (takes === S.delayChoices.length) {
+            html += '<p>You chose <strong>immediate rewards</strong> every time — taking your points right away rather than waiting for more.</p>';
+        } else if (delays === S.delayChoices.length) {
+            html += '<p>You chose to <strong>wait every time</strong> — opting for the larger delayed reward instead of the quick win.</p>';
+        } else {
+            html += '<p>You showed a <strong>mix of strategies</strong> — sometimes taking the instant reward, sometimes waiting for more.</p>';
+        }
+    }
+    html += '</div>';
+
+    // ADHD science
+    html += '<div class="reveal-section">';
+    html += '<h3>What Does This Mean?</h3>';
+    html += `<p>This reward choice is a simplified version of <strong>delay discounting tasks</strong> — a well-established tool in ADHD research.</p>`;
+    html += `<p>Studies show that individuals with ADHD tend to prefer <strong>smaller, immediate rewards</strong> over larger, delayed ones. This is called <strong>delay aversion</strong> — it's not about lacking intelligence or willpower.</p>`;
+    html += `<p>It's linked to differences in <strong>dopamine signaling</strong> in the brain's reward pathways (the mesolimbic system). For people with ADHD, the subjective "cost" of waiting is higher, making the delay feel more aversive.</p>`;
+    html += `<p>This doesn't mean that choosing the immediate reward = having ADHD. It's one of many behavioral patterns researchers examine, and everyone falls somewhere on the spectrum of delay tolerance.</p>`;
+    html += '</div>';
+
+    html += '<div class="reveal-section">';
+    html += '<h3>Key Takeaway</h3>';
+    html += `<p>ADHD is not a deficit of <em>knowing</em> the right choice — it's a difference in how the brain <strong>values time</strong>. The prefrontal cortex and ventral striatum interact differently, making "now" feel disproportionately more rewarding than "later."</p>`;
+    html += `<p style="color:var(--text);font-weight:500;">— Sonuga-Barke (2002), Delay Aversion Theory</p>`;
+    html += '</div>';
+
+    // Coin exchange
+    html += '<div class="divider"></div>';
+    html += `<div class="stat"><div class="stat-value gold">${S.totalPoints}</div><div class="stat-label">Total Points Earned</div></div>`;
+
+    if (S.totalPoints > 0) {
+        html += '<div class="coins-area">';
+        html += '<h3 class="mt-16">Exchange Your Points</h3>';
+        html += '<p style="color:var(--text-muted);font-size:14px;margin-bottom:8px;">Each point = 1 Possanka Coin</p>';
+        html += '<div class="coins-grid">';
+        for (let i = 0; i < S.totalPoints; i++) {
+            html += `<img class="coin-img" src="possanka%20coin.png" alt="Possanka Coin" style="animation-delay:${i * 0.12}s" onerror="this.style.display='none'">`;
+        }
+        html += '</div>';
+        html += '</div>';
+    } else {
+        html += '<p class="subtitle mt-16">No coins this time — but the real reward is understanding how our brains work.</p>';
+    }
+
+    html += '<div class="mt-32"><button class="btn btn-outline btn-lg" onclick="restart()">Start Over</button></div>';
+
+    return html;
+}
+
+function restart() {
+    S.step = 0;
+    S.totalPoints = 0;
+    S.pendingDelayed = 0;
+    S.delayChoices = [];
+    S.stroopRound = 0;
+    S.stroopCorrect = 0;
+    S.reactionRound = 0;
+    S.reactionTimes = [];
+    S.reactionState = 'idle';
+    S.memoryRound = 0;
+    S.memoryCorrect = 0;
+    navigate(renderWelcome);
+}
+
+/* ===========================================
+   INIT
+   =========================================== */
+navigate(renderWelcome);
+</script>
+</body>
+</html>
