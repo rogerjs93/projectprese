@@ -479,7 +479,7 @@ function goStroopIntro() {
 }
 function renderStroopIntro() {
     return `
-        <h2>Test 1: Color Conflict</h2>
+        <h2>Test 1: Stroop Attention Test</h2>
         <div class="instruction">
             You'll see a color <strong>word</strong> displayed in a different ink color.<br><br>
             Your job: tap the button matching the <strong>INK COLOR</strong>, not the word itself.
@@ -546,7 +546,7 @@ function goReactionIntro() {
 }
 function renderReactionIntro() {
     return `
-        <h2>Test 2: Quick Reflexes</h2>
+        <h2>Test 2: Reaction Time Experiment</h2>
         <div class="instruction">
             A circle will appear. When it turns <strong style="color:var(--success)">GREEN</strong>, tap it as fast as you can.<br><br>
             <strong>Don't tap too early!</strong> If you do, the round restarts.
@@ -640,7 +640,7 @@ function goMemoryIntro() {
 }
 function renderMemoryIntro() {
     return `
-        <h2>Test 3: Number Recall</h2>
+        <h2>Test 3: Working Memory Challenge</h2>
         <div class="instruction">
             Watch a sequence of digits appear one at a time. Then <strong>enter them back in the same order</strong> using the keypad.<br><br>
             The sequences get longer each round. There are <strong>${MEMORY_ROUNDS} rounds</strong>.
@@ -753,7 +753,7 @@ function renderTestResult(testNum, scoreText, passed) {
         html += `<div class="bonus-banner">⏳ Your patience paid off! +${bonus} point${bonus > 1 ? 's' : ''} from delaying!</div>`;
     }
 
-    const testNames = { 1: 'Color Conflict', 2: 'Quick Reflexes', 3: 'Number Recall' };
+    const testNames = { 1: 'Stroop Attention Test', 2: 'Reaction Time Experiment', 3: 'Working Memory Challenge' };
     html += `<h2>${testNames[testNum]}</h2>`;
     html += `<div class="stat mb-16"><div class="stat-value accent">${scoreText.split(' ')[0]}</div><div class="stat-label">${scoreText.split(' ').slice(1).join(' ')}</div></div>`;
 
